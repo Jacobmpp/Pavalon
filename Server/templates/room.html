@@ -6,36 +6,42 @@
 </head>
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
 <script>
-    name = {{name}}
-    room_id = {{room_id}}
+    name = '{{name}}'
+    room_id = '{{room_id}}'
     console.log(name, room_id)
     var socket = io();
 
-    document.getElementById('join-form').onsubmit = function(e) {
-        e.preventDefault();
-        var username = document.getElementById('username').value;
-        var room_id = document.getElementById('room_id').value;
+    socket.emit('join', {name: name, room_id: room_id});
 
-        socket.emit('join', {username: username, room_id: room_id});
-    };
+    socket.on('players', function(players) {
+        console.log(players)
+        listTag = document.querySelector('#player-list')
+        result = ''
+        players.forEach(player => {
+            result += `<li>${player}</li>\n`
+        });
+        listTag.innerHTML = result
+    });
 
-    socket.on('update', function(msg) {
-        var messages = document.getElementById('messages');
-        var message = document.createElement('p');
-        message.textContent = msg;
-        messages.appendChild(message);
+    socket.on('ready', function(msg) {
+        alert(msg);
     });
 
     socket.on('role', function(msg) {
         alert(msg);
     });
-
-    socket.on('error', function(msg) {
-        alert(msg);
-    });
 </script>
 <body>
     <h1>Room {{ room_id }}</h1>
-    
+    <h2>Cards:</h2>
+    <lu>
+        {% for role in roles %}
+        <li>{{ role }}</li>
+        {% endfor %}
+    </lu>
+    <h2>Present:</h2>
+    <lu id="player-list">
+    </lu>
+    <h3>Waiting for everyone to join...</h3>
 </body>
 </html>

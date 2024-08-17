@@ -72,9 +72,10 @@ class Game:
 
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, name, sid):
         self.name = name
         self.card = None
+        self.sid = sid
 
     def set_card(self, card:Card):
         self.card = card
