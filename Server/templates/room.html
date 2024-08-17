@@ -6,42 +6,56 @@
 </head>
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
 <script>
-    name = '{{name}}'
-    room_id = '{{room_id}}'
-    console.log(name, room_id)
+    name = '{{name}}';
+    room_id = '{{room_id}}';
+    console.log(name, room_id);
     var socket = io();
 
     socket.emit('join', {name: name, room_id: room_id});
 
     socket.on('players', function(players) {
-        console.log(players)
-        listTag = document.querySelector('#player-list')
-        result = ''
+        console.log(players);
+        listTag = document.querySelector('#player-list');
+        result = '';
         players.forEach(player => {
             result += `<li>${player}</li>\n`
         });
-        listTag.innerHTML = result
+        listTag.innerHTML = result;
     });
 
     socket.on('ready', function(msg) {
-        alert(msg);
+        //alert(msg);
     });
 
     socket.on('role', function(msg) {
-        alert(msg);
+        parts = msg.split('\n');
+        document.querySelector('#your-role-div').setAttribute('style', '');
+        document.querySelector('#waiting-label').setAttribute('style', 'display: none;');
+        document.querySelector('#role-header').innerHTML = parts[0]
+        document.querySelector('#role-desc').innerHTML = parts[1]
+
     });
 </script>
 <body>
     <h1>Room {{ room_id }}</h1>
-    <h2>Cards:</h2>
-    <lu>
-        {% for role in roles %}
-        <li>{{ role }}</li>
-        {% endfor %}
-    </lu>
-    <h2>Present:</h2>
-    <lu id="player-list">
-    </lu>
-    <h3>Waiting for everyone to join...</h3>
+    <div id="your-role-div" style="display: none;">
+        <h2>Role:</h2>
+        <h3 id="role-header"></h3>
+        <p id="role-desc"></p>
+    </div>
+    <div id="roles-div">
+        <h2>Cards:</h2>
+        <lu>
+            {% for role in roles %}
+            <li>{{ role }}</li>
+            {% endfor %}
+        </lu>
+    </div>
+    <div id='player-list-div'>
+        <h2>Present:</h2>
+            <lu id="player-list">
+            </lu>
+        <h3 id="waiting-label">Waiting for everyone to join...</h3>
+    </div>
 </body>
 </html>

@@ -114,26 +114,26 @@ class Room:
     def dist_cards(self):
         cards = copy.deepcopy(self.cards)
         random.shuffle(cards)
-        for i, player in enumerate(self.players.values):
+        for i, player in enumerate(self.players.values()):
             player.set_card(cards[i])
 
     def get_known_to_evil(self) -> list[str]:
-        return [p.name for p in self.players if p.card.known_to_evil]
+        return [p.name for p in self.players.values() if p.card.known_to_evil]
     
     def get_appears_evil(self) -> list[str]:
-        return [p.name for p in self.players if p.card.appears_evil]
+        return [p.name for p in self.players.values() if p.card.appears_evil]
     
     def get_percival_sees(self):
-        pair = [p.name for p in self.players if p.card.name in ['Merlin', 'Morgana']]
+        pair = [p.name for p in self.players.values() if p.card.name in ['Merlin', 'Morgana']]
         random.shuffle(pair)
-        return "<b>{pair[0]}</b> and <b>{pair[1]}</b>"
+        return f"<b>{pair[0]}</b> and <b>{pair[1]}</b>"
     
     def __repr__(self):
         return f"[\nPlayers: {self.players},\nCards: {self.cards},\nGame: {self.game}\n]"
 
 
 cards_prototypes = {
-    'Merlin' : Card('Merlin', True, lambda room: (f"You are Merlin - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You see these players as evil: {str(room.get_appears_evil())}")),
+    'Merlin' : Card('Merlin', True, lambda room: (f"You are Merlin - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You see these players as evil: {', '.join(room.get_appears_evil())}")),
     'Loyal Servant of Arthur' : Card('Loyal Servant of Arthur', True, 'You can only put in <b>SUCCESS</b> when placed on a quest.'),
     'Assasin' : Card('Assasin', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest and get final say on who you beleive to be Merlin.'),
     'Minion of Mordred' : Card('Minion of Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest.'),
