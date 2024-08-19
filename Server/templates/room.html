@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Room {{ room_id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
 <script>
@@ -13,7 +14,7 @@
 
     socket.emit('join', {name: name, room_id: room_id});
 
-    socket.on('players', function(players) {
+    socket.on('players', (players) => {
         console.log(players);
         listTag = document.querySelector('#player-list');
         result = '';
@@ -23,11 +24,14 @@
         listTag.innerHTML = result;
     });
 
-    socket.on('ready', function(msg) {
-        //alert(msg);
+    socket.on('error', (error) => {
+        if(error === 'name-taken') {
+            name = prompt('That name is taken, try another:')
+            socket.emit('join', {name: name, room_id: room_id});
+        }
     });
 
-    socket.on('role', function(msg) {
+    socket.on('role', (msg) => {
         parts = msg.split('\n');
         document.querySelector('#your-role-div').setAttribute('style', '');
         document.querySelector('#waiting-label').setAttribute('style', 'display: none;');
@@ -37,6 +41,7 @@
     });
 </script>
 <body>
+<div class="page-container">
     <h1>Room {{ room_id }}</h1>
     <div id="your-role-div" style="display: none;">
         <h2>Role:</h2>
@@ -53,9 +58,13 @@
     </div>
     <div id='player-list-div'>
         <h2>Present:</h2>
-            <lu id="player-list">
-            </lu>
+        <lu id="player-list">
+            {% for player in players %}
+            <li>{{ player }}</li>
+            {% endfor %}
+        </lu>
         <h3 id="waiting-label">Waiting for everyone to join...</h3>
     </div>
+</div>
 </body>
 </html>

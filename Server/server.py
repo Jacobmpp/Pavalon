@@ -1,4 +1,4 @@
-import json
+from email.policy import default
 from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from utils import *
@@ -52,12 +52,12 @@ def create_room():
 
     if room_id not in rooms:
         return render_template('select_roles.html', room_id=room_id, roles=selectable_roles)
-    return render_template('index.html', room_id=room_id, message='Room already existed')
+    return redirect(url_for('room', room_id=room_id, name=name))
 
 @app.route('/get_rooms', methods=['GET'])
 def get_rooms():
     global rooms
-    return list(rooms.keys()), 200
+    return list(rooms), 200
 
 @app.route('/room', methods=['GET', 'POST'])
 def room(room_id=None, name=None):
@@ -66,9 +66,8 @@ def room(room_id=None, name=None):
         room_id = request.values['room_id']
     if name == None:
         name = request.values['name']
-    current_room = rooms[room_id]
-    return render_template('room.html', room_id=room_id, name=name, roles=[str(r) for r in current_room.cards])
-    return repr(rooms[room_id]).replace("\n", "<br>"), 200
+    current_room:Room = rooms[room_id]
+    return render_template('room.html', room_id=room_id, name=name, roles=[r.name for r in current_room.cards], players=list(current_room.players))
 
 @socketio.on('join')
 def on_join(data):
@@ -80,16 +79,19 @@ def on_join(data):
     if room_id not in rooms:
         emit('That room does not exist yet.')
 
-    if rooms[room_id].add_player(Player(name, request.sid)):
-        emit('players', [p for p in rooms[room_id].players], room=room_id)
+    room:Room = rooms[room_id]
 
-        if len(rooms[room_id].players) == len(rooms[room_id].cards):
-            emit('ready', 'The game is starting!', room=room_id)
-            rooms[room_id].dist_cards()
-            for player in rooms[room_id].players.values():
-                emit('role', player.card.game_start(rooms[room_id]), room=player.sid)
-    else:
-        emit('error', 'You are already in that room.')
+    match room.add_player(Player(name, request.sid)):
+        case True:
+            emit('players', list(room.players), room=room_id)
+
+            if len(room.players) == len(room.cards):
+                emit('ready', 'The game is starting!', room=room_id)
+                room.dist_cards()
+                for player in room.players.values():
+                    emit('role', player.card.game_start(room), room=player.sid)
+        case error:
+            emit('error', error)
 
 @socketio.on('leave')
 def on_leave(data):
@@ -103,6 +105,16 @@ def on_leave(data):
 
     if len(rooms[room_id].players) == 0:
         del rooms[room_id]
+
+@socketio.on('get_role')
+def on_get_role(data):
+    global rooms
+    name = data['name']
+    room_id = data['room_id']
+
+    if room_id in rooms and name in rooms[room_id].players:
+        player:Player = rooms[room_id].players[name]
+        emit(player.card.game_start(rooms[room_id]), room=player.sid)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

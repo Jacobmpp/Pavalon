@@ -89,11 +89,14 @@ class Room:
         self.players:dict[Player] = {}
         self.game = Game(len(cards))
 
-    def add_player(self, player:Player) -> bool:
-        if len(self.players) < len(self.cards) and player.name not in self.players:
-            self.players[player.name] = player
-            return True
-        return False
+    def add_player(self, player:Player) -> bool|str:
+        if len(self.players) >= len(self.cards):
+            return 'room-full'
+        if player.name in self.players:
+            return 'name-taken'
+
+        self.players[player.name] = player
+        return True
 
     def remove_player(self, name) -> bool:
         if(name in self.players):
