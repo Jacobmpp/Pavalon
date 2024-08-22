@@ -59,7 +59,7 @@ class Game:
 
     def get_quest(self, index=None) -> Quest:
         if(index == None):
-            index = (self.good+self.evil)
+            index = self.passes + self.fails
         return Quest(self.quest_sizes[index], 2 if (index == 3 and self.good + self.evil >= 7) else 1)
     
     def get_round(self):
@@ -67,9 +67,6 @@ class Game:
 
     def __repr__(self) -> str:
         return f"(\n  Good: {self.good}, Evil: {self.evil}, Round: {self.get_round()},\n  Quest Sizes: {self.quest_sizes}\n)"
-
-
-
 
 class Player:
     def __init__(self, name, sid):
@@ -131,6 +128,9 @@ class Room:
         random.shuffle(pair)
         return f"<b>{pair[0]}</b> and <b>{pair[1]}</b>"
     
+    def get_leader(self) -> Player:
+        return self.players[list(self.players)[self.game.leader_index]]
+
     def __repr__(self):
         return f"[\nPlayers: {self.players},\nCards: {self.cards},\nGame: {self.game}\n]"
 

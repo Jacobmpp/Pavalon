@@ -74,6 +74,8 @@ def on_join(data):
     global rooms
     name = data['name']
     room_id = data['room_id']
+    if(name == 'kill'):
+        del rooms[room_id]
     join_room(room_id)
 
     if room_id not in rooms:
@@ -90,6 +92,7 @@ def on_join(data):
                 room.dist_cards()
                 for player in room.players.values():
                     emit('role', player.card.game_start(room), room=player.sid)
+                activate_leader(room)
         case error:
             emit('error', error)
 
@@ -111,10 +114,46 @@ def on_get_role(data):
     global rooms
     name = data['name']
     room_id = data['room_id']
+    room:Room = rooms[room_id]
+    player:Player = room.players[name]
+    emit('role', player.card.game_start(room), room=player.sid)
 
-    if room_id in rooms and name in rooms[room_id].players:
-        player:Player = rooms[room_id].players[name]
-        emit(player.card.game_start(rooms[room_id]), room=player.sid)
+@socketio.on('leaders-quest')
+def on_vote(data):
+    global rooms
+    name = data['name']
+    room_id = data['room_id']
+    room:Room = rooms[room_id]
+    player:Player = room.players[name]
+    
+    if(room.get_leader() is not player):
+        emit('error', 'Nice try! XD', room=player.sid)
+
+
+    emit('prequest-vote', data['members'], room=room_id)
+
+@socketio.on('prequest-vote')
+def on_vote(data):
+    global rooms
+    name = data['name']
+    room_id = data['room_id']
+    room:Room = rooms[room_id]
+    player:Player = room.players[name]
+    emit(player.card.game_start(room), room=player.sid)
+
+@socketio.on('quest-vote')
+def on_vote(data):
+    global rooms
+    name = data['name']
+    room_id = data['room_id']
+    room:Room = rooms[room_id]
+    player:Player = room.players[name]
+    emit(player.card.game_start(room), room=player.sid)
+
+
+def activate_leader(room:Room):
+    emit('leader', room.game.get_quest().size, room=room.get_leader().sid)
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)

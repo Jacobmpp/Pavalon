@@ -7,21 +7,26 @@
 </head>
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
 <script>
-    name = '{{name}}';
-    room_id = '{{room_id}}';
-    console.log(name, room_id);
+    const name = '{{name}}';
+    const room_id = '{{room_id}}';
+    const base = {'name': name, 'room_id': room_id}
+    let players = []
+    let questSize = 0
     var socket = io();
 
-    socket.emit('join', {name: name, room_id: room_id});
+    socket.emit('join', base);
 
     socket.on('players', (players) => {
-        console.log(players);
-        listTag = document.querySelector('#player-list');
+        listTag = document.getElementById('player-list');
         result = '';
         players.forEach(player => {
             result += `<li>${player}</li>\n`
         });
         listTag.innerHTML = result;
+        if (document.getElementById('players-dropper').classList.contains('active')){
+            playersDiv = document.getElementById('player-list-div');
+            playersDiv.style.maxHeight = playersDiv.scrollHeight + 'px';
+        }
     });
 
     socket.on('error', (error) => {
@@ -32,39 +37,112 @@
     });
 
     socket.on('role', (msg) => {
-        parts = msg.split('\n');
-        document.querySelector('#your-role-div').setAttribute('style', '');
-        document.querySelector('#waiting-label').setAttribute('style', 'display: none;');
-        document.querySelector('#role-header').innerHTML = parts[0]
-        document.querySelector('#role-desc').innerHTML = parts[1]
-
+        const parts = msg.split('\n');
+        document.getElementById('your-role-div').setAttribute('style', '');
+        document.getElementById('waiting-label').setAttribute('style', 'display: none;');
+        document.getElementById('role-header').innerHTML = parts[0]
+        document.getElementById('role-desc').innerHTML = parts[1]
+        const role_container = document.getElementById('your-role-inner')
+        role_container.style.maxHeight = role_container.scrollHeight + 'px'
     });
+
+    socket.on('leader', (count) => {
+        questSize = count
+        //clear selection screen
+        document.getElementById('leader').setAttribute('style', '');
+    })
+
+    const sendQuest = () => {
+        let members = []
+        // get selected members from selection
+        if(members.length != questSize){
+            alert('Wrong size, pick ' + questSize + ' questers.');
+            return
+        }
+        socket.emit('leaders-quest', {...base, 'members': members})
+        document.getElementById('leader').setAttribute('style', 'display: none;');
+    }
+
+    socket.on('prequest-vote', (msg) => {
+        document.getElementById('pre-quest-vote').setAttribute('style', '');
+        document.getElementById('leader').setAttribute('style', 'display: none;');
+        //load quest members view
+    })
+
+    const voteForQuest = (inFavor) => {
+        socket.emit('prequest-vote')
+    }
+
+    socket.on('pre-quest-result', (playerMap) => {
+        document.getElementById('pre-quest-result').setAttribute('style', '');
+        document.getElementById('pre-quest-vote').setAttribute('style', 'display: none;');
+        //TODO: set the contents based on the votes people gave and save the results
+    })
+
+    socket.on('quest-vote', (voteOptions) => {
+        document.getElementById('quest-vote').setAttribute('style', '');
+        document.getElementById('pre-quest-result').setAttribute('style', 'display: none;');
+        //TODO: render the right options
+    })
+
+    const vote = (choice) => {
+        document.getElementById('pre-quest-vote').setAttribute('style', 'display: none;');
+        socket.emit('quest-vote', {...base, 'choice': choice})
+    }
+
+    socket.on('quest-result', (msg) => {
+        document.getElementById('quest-vote').setAttribute('style', 'display: none;');
+    })
 </script>
+
 <body>
 <div class="page-container">
     <h1>Room {{ room_id }}</h1>
     <div id="your-role-div" style="display: none;">
-        <h2>Role:</h2>
-        <h3 id="role-header"></h3>
-        <p id="role-desc"></p>
+        <button type="button" class="collapsible active">Your Role:</button>
+        <div id="your-role-inner" class="content">
+            <h3 id="role-header"></h3>
+            <p id="role-desc"></p>
+        </div>
     </div>
-    <div id="roles-div">
-        <h2>Cards:</h2>
+    <button type="button" class="collapsible">Cards:</button>
+    <div id="leader-div" class="content" style="max-height: 0px;">
+        <lu>
+            {% for player in players %}
+            <li>{{ player }}</li> <!-- TODO: make this checkboxes -->
+            {% endfor %}
+        </lu>
+    </div>
+    <button type="button" class="collapsible active">Cards:</button>
+    <div id="roles-div" class="content">
         <lu>
             {% for role in roles %}
             <li>{{ role }}</li>
             {% endfor %}
         </lu>
     </div>
-    <div id='player-list-div'>
-        <h2>Present:</h2>
+    <button type="button" id='players-dropper' class="collapsible active">Players:</button>
+    <div id='player-list-div' class="content">
         <lu id="player-list">
             {% for player in players %}
             <li>{{ player }}</li>
             {% endfor %}
         </lu>
-        <h3 id="waiting-label">Waiting for everyone to join...</h3>
     </div>
+    <h3 id="waiting-label">Waiting for everyone to join...</h3>
 </div>
 </body>
+
+<script>
+    const coll = document.getElementsByClassName("collapsible");
+    for (let i = 0; i < coll.length; i++) {
+        content = coll[i].nextElementSibling
+        content.style.maxHeight = content.scrollHeight + 'px'
+        coll[i].addEventListener("click", function() {
+            const content = this.nextElementSibling
+            content.style.maxHeight = this.classList.toggle("active") ? content.scrollHeight + 'px' : '0px'
+        });
+    }
+
+</script>
 </html>
