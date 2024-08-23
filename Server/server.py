@@ -5,7 +5,7 @@ from utils import *
 
 selectable_roles = [
     ' Merlin', 
-    ' Assasin', 
+    ' Assassin', 
     '1Loyal Servant of Arthur', 
     '2Loyal Servant of Arthur', 
     '3Loyal Servant of Arthur', 

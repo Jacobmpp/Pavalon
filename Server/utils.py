@@ -138,11 +138,11 @@ class Room:
 cards_prototypes = {
     'Merlin' : Card('Merlin', True, lambda room: (f"You are Merlin - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You see these players as evil: {', '.join(room.get_appears_evil())}")),
     'Loyal Servant of Arthur' : Card('Loyal Servant of Arthur', True, 'You can only put in <b>SUCCESS</b> when placed on a quest.'),
-    'Assasin' : Card('Assasin', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest and get final say on who you beleive to be Merlin.'),
+    'Assassin' : Card('Assassin', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest and get final say on who you believe to be Merlin.'),
     'Minion of Mordred' : Card('Minion of Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest.'),
     'Oberon' : Card('Oberon', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest but you do not know anything else.', False, True, False),
     'Morgana' : Card('Morgana', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. Percival sees you and Merlin, but does not know who is whom.'),
-    'Mordred' : Card('Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. You are not known to Merlin. If there is no assasin, you get final say on who you believe to be Merlin.', appears_evil=False),
+    'Mordred' : Card('Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. You are not known to Merlin. If there is no assassin, you get final say on who you believe to be Merlin.', appears_evil=False),
     'Percival' : Card('Percival', True, lambda room: (f"You are Percival - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You know that between {room.get_percival_sees()} one is Merlin and one is Morgana, but not which")),
     'Lunatic' : Card('Lunatic', False, 'You must put a <b>FAILURE</b> when placed on a quest.', options=['FAIL']), 
     'Good Sorcerer' : Card('Good Sorcerer', True, 'You can put a <b>SUCCESS</b> or a <b>MAGIC</b> when placed on a quest. Each MAGIC will invert the result of the quest.', options=['SUCCESS', 'MAGIC']),

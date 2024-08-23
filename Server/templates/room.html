@@ -12,9 +12,9 @@
     const base = {'name': name, 'room_id': room_id}
     let players = []
     let questSize = 0
-    let questHistory = [{leader:'Jim', on:['Jim', 'Jacob'], votes:['Jimmy', 'Jacob'], results:['SUCCESS','SUCCESS','SUCCESS'], passed:true},
+    let questHistory = [{leader:'Jim', on:['Jim', 'Jimmy'], votes:['Jim', 'Jimmy'], results:['SUCCESS','FAIL'], passed:false},
                         {leader:'Jimmy', on:['Jimmy', 'Jacob'], votes:['Jimmy'], results:false},
-                        {leader:'Jacob', on:['Jim', 'Jacob'], votes:['Jimmy', 'Jacob'], results:['SUCCESS','FAIL','MAGIC'], passed:true}]
+                        {leader:'Jacob', on:['Jim', 'Jimmy'], votes:['Jimmy', 'Jacob'], results:['FAIL','MAGIC'], passed:true}]
     var socket = io();
 
     socket.emit('join', base);
