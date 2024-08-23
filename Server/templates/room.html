@@ -12,13 +12,17 @@
     const base = {'name': name, 'room_id': room_id}
     let players = []
     let questSize = 0
+    let questHistory = [{leader:'Jim', on:['Jim', 'Jacob'], votes:['Jimmy', 'Jacob'], results:['SUCCESS','SUCCESS','SUCCESS'], passed:true},
+                        {leader:'Jimmy', on:['Jimmy', 'Jacob'], votes:['Jimmy'], results:false},
+                        {leader:'Jacob', on:['Jim', 'Jacob'], votes:['Jimmy', 'Jacob'], results:['SUCCESS','FAIL','MAGIC'], passed:true}]
     var socket = io();
 
     socket.emit('join', base);
 
-    socket.on('players', (players) => {
+    socket.on('players', (playerData) => {
         listTag = document.getElementById('player-list');
         result = '';
+        players = playerData
         players.forEach(player => {
             result += `<li>${player}</li>\n`
         });
@@ -46,10 +50,17 @@
         role_container.style.maxHeight = role_container.scrollHeight + 'px'
     });
 
-    socket.on('leader', (count) => {
-        questSize = count
-        //clear selection screen
-        document.getElementById('leader').setAttribute('style', '');
+    socket.on('leader', (data) => {
+        questSize = data.count
+        leader = data.leader
+        if(name == leader){
+            //clear selection screen
+            document.getElementById('leader-div').setAttribute('style', '');
+
+        }
+        questHistory[questHistory.length] = {'leader':leader}
+        updateQuestHistoryView()
+        document.getElementById('quest-history-div').setAttribute('style', '');
     })
 
     const sendQuest = () => {
@@ -63,19 +74,31 @@
         document.getElementById('leader').setAttribute('style', 'display: none;');
     }
 
-    socket.on('prequest-vote', (msg) => {
+    socket.on('prequest-vote', (playersOn) => {
         document.getElementById('pre-quest-vote').setAttribute('style', '');
         document.getElementById('leader').setAttribute('style', 'display: none;');
         //load quest members view
+        questHistory.find((record) => (record.results === undefined)).on = playersOn
     })
 
     const voteForQuest = (inFavor) => {
         socket.emit('prequest-vote')
     }
 
-    socket.on('pre-quest-result', (playerMap) => {
+    socket.on('pre-quest-result', (playersFor) => {
+        questHistoryEntry = questHistory.find((record) => (record.results === undefined))
         document.getElementById('pre-quest-result').setAttribute('style', '');
         document.getElementById('pre-quest-vote').setAttribute('style', 'display: none;');
+        questHistoryEntry.votes = playersFor
+
+        if(playerFor.length < (players.length/2)){
+            questHistoryEntry.result = false
+            return
+        }
+
+        if(questHistoryEntry.on.includes(name)){
+            //TODO: Load voting
+        }
         //TODO: set the contents based on the votes people gave and save the results
     })
 
@@ -98,6 +121,13 @@
 <body>
 <div class="page-container">
     <h1>Room {{ room_id }}</h1>
+    <div id="quest-history-div" style="display: none;">
+        <button type="button" class="collapsible">Quest Histoy:</button>
+        <div id="quest-history-inner" class="content">
+            <table id="history-table">
+            </table>
+        </div>
+    </div>
     <div id="your-role-div" style="display: none;">
         <button type="button" class="collapsible active">Your Role:</button>
         <div id="your-role-inner" class="content">
@@ -105,7 +135,7 @@
             <p id="role-desc"></p>
         </div>
     </div>
-    <button type="button" class="collapsible">Cards:</button>
+    <button type="button" class="collapsible">You're Leader. Pick a Quest:</button>
     <div id="leader-div" class="content" style="max-height: 0px;">
         <lu>
             {% for player in players %}
@@ -144,5 +174,42 @@
         });
     }
 
+    const getResultsString = (results, passed) => {
+        if(!results)return '';
+        out = ''
+        results.forEach((result) => {
+            switch(result){
+                case "SUCCESS":
+                    out += "🟢"
+                    break;
+                case "FAIL":
+                    out += "🔴"
+                    break;
+                default:
+                    out += "🔥"
+            }
+        })
+        return (passed ?  '✅' : '🟥') + ':' + out
+    }
+
+    const updateQuestHistoryView = () => {
+        out = '<tr><th>Quest</th>'
+        players.forEach((player)=>{out += '<th>' + player + '</th>'})
+        out += '<th>Result</th></tr>'
+        count = 1
+        questHistory.forEach((record)=>{
+            out += '<tr><td>' + (record.results === false ? `${count} (X)` : count++) +  '</td>'
+            players.forEach((player)=>{
+                out += '<td>' 
+                    + ('votes' in record ? (record.votes.includes(player) ? '🟢' : '🔴') : '')
+                    + ('on' in record ? (record.on.includes(player) ? '✋' : '') : '')
+                    + (player == record.leader ? '👑' : '')
+                    + '</td>'
+            })
+            out += '<td>' + getResultsString(record.results, record.passed) + '</td></tr>'
+        })
+        console.log(out)
+        document.getElementById('history-table').innerHTML = out
+    }
 </script>
 </html>

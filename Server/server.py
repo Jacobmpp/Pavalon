@@ -92,7 +92,7 @@ def on_join(data):
                 room.dist_cards()
                 for player in room.players.values():
                     emit('role', player.card.game_start(room), room=player.sid)
-                activate_leader(room)
+                activate_leader(room_id)
         case error:
             emit('error', error)
 
@@ -151,8 +151,10 @@ def on_vote(data):
     emit(player.card.game_start(room), room=player.sid)
 
 
-def activate_leader(room:Room):
-    emit('leader', room.game.get_quest().size, room=room.get_leader().sid)
+def activate_leader(room_id):
+    global rooms
+    room:Room = rooms[room_id]
+    emit('leader', {'count':room.game.get_quest().size, 'leader':room.get_leader().name}, room=room_id)
 
 
 if __name__ == '__main__':
