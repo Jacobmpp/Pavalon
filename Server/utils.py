@@ -19,6 +19,9 @@ class Card:
             return f'{self.name} - You are {alignment}\n{self.start}'
         return self.start(room)
     
+    def get_options(self, room) -> list[str]: # return the player's options based on their role and the room state if applicable
+        return self.options if isinstance(self.options, list) else self.options(room)
+    
     def __repr__(self):
         return "\n  " + self.name
 
@@ -56,6 +59,9 @@ class Game:
         self.leader_index = random.randint(0,good+evil-1)
         self.passes = 0
         self.fails = 0
+        self.unsent_quests = 0
+        self.quest_history = []
+        self.vote_count = 0
 
     def get_quest(self, index=None) -> Quest:
         if(index == None):
@@ -64,6 +70,9 @@ class Game:
     
     def get_round(self):
         return self.passes + self.fails + 1
+    
+    def get_leader_index(self):
+        return (self.passes + self.fails + self.leader_index + self.unsent_quests)
 
     def __repr__(self) -> str:
         return f"(\n  Good: {self.good}, Evil: {self.evil}, Round: {self.get_round()},\n  Quest Sizes: {self.quest_sizes}\n)"
@@ -129,7 +138,7 @@ class Room:
         return f"<b>{pair[0]}</b> and <b>{pair[1]}</b>"
     
     def get_leader(self) -> Player:
-        return self.players[list(self.players)[self.game.leader_index]]
+        return self.players[list(self.players)[self.game.get_leader_index() % len(self.players)]]
 
     def __repr__(self):
         return f"[\nPlayers: {self.players},\nCards: {self.cards},\nGame: {self.game}\n]"

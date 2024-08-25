@@ -7,126 +7,170 @@
 </head>
 <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.min.js"></script>
 <script>
-    const name = '{{name}}';
-    const room_id = '{{room_id}}';
+    const optionMap = {'SUCCESS': '✅ Success', 'FAIL': '❌ Failure', 'MAGIC': '🔥 Magic'}
+    const name = '{{name}}'
+    const room_id = '{{room_id}}'
     const base = {'name': name, 'room_id': room_id}
     let players = []
     let questSize = 0
-    let questHistory = [{leader:'Jim', on:['Jim', 'Jimmy'], votes:['Jim', 'Jimmy'], results:['SUCCESS','FAIL'], passed:false},
+    let demoHistory = [{leader:'Jim', on:['Jim', 'Jimmy'], votes:['Jim', 'Jimmy'], results:['SUCCESS','FAIL'], passed:false},
                         {leader:'Jimmy', on:['Jimmy', 'Jacob'], votes:['Jimmy'], results:false},
                         {leader:'Jacob', on:['Jim', 'Jimmy'], votes:['Jimmy', 'Jacob'], results:['FAIL','MAGIC'], passed:true}]
-    var socket = io();
+    let questHistory = [] //demoHistory
+    let colorBlind = false
+    var socket = io()
 
-    socket.emit('join', base);
+    socket.emit('join', base)
 
     socket.on('players', (playerData) => {
-        listTag = document.getElementById('player-list');
-        result = '';
+        listTag = document.getElementById('player-list')
+        result = ''
         players = playerData
         players.forEach(player => {
             result += `<li>${player}</li>\n`
-        });
-        listTag.innerHTML = result;
+        })
+        listTag.innerHTML = result
         if (document.getElementById('players-dropper').classList.contains('active')){
-            playersDiv = document.getElementById('player-list-div');
-            playersDiv.style.maxHeight = playersDiv.scrollHeight + 'px';
+            playersDiv = document.getElementById('player-list-div')
+            playersDiv.style.maxHeight = playersDiv.scrollHeight + 'px'
         }
-    });
+    })
 
     socket.on('error', (error) => {
-        if(error === 'name-taken') {
-            name = prompt('That name is taken, try another:')
-            socket.emit('join', {name: name, room_id: room_id});
-        }
-    });
+        alert(error)
+    })
 
     socket.on('role', (msg) => {
-        const parts = msg.split('\n');
-        document.getElementById('your-role-div').setAttribute('style', '');
-        document.getElementById('waiting-label').setAttribute('style', 'display: none;');
+        const parts = msg.split('\n')
+        document.getElementById('your-role-div').setAttribute('style', '')
+        document.getElementById('waiting-label').setAttribute('style', 'display: none;')
         document.getElementById('role-header').innerHTML = parts[0]
         document.getElementById('role-desc').innerHTML = parts[1]
-        const role_container = document.getElementById('your-role-inner')
-        role_container.style.maxHeight = role_container.scrollHeight + 'px'
-    });
+        const roleContainer = document.getElementById('your-role-inner')
+        roleContainer.style.maxHeight = roleContainer.scrollHeight + 'px'
+    })
 
     socket.on('leader', (data) => {
         questSize = data.count
         leader = data.leader
         if(name == leader){
             //clear selection screen
-            document.getElementById('leader-div').setAttribute('style', '');
-
+            document.getElementById('leader-div').setAttribute('style', '')
+            resetLeaderDiv()
         }
         questHistory[questHistory.length] = {'leader':leader}
+        document.getElementById('quest-history-div').setAttribute('style', '')
+        document.getElementById('players-outer-div').setAttribute('style', 'display: none;')
         updateQuestHistoryView()
-        document.getElementById('quest-history-div').setAttribute('style', '');
     })
+
+    const resetLeaderDiv = () => {
+        let out = '<h4>Pick ' + questSize + ':</h4>'
+
+        players.forEach((player, i) => {
+            out += `<input type="checkbox" id="${i}-leader-check" name="${player}">
+                    <label for="${player}">${player}</label><br>`
+        })
+
+        out += '<br><button type="button" onclick="sendQuest()">Submit</button>'
+
+        const leaderContainer = document.getElementById('leader-inner-div')
+        leaderContainer.innerHTML = out
+        leaderContainer.style.maxHeight = leaderContainer.scrollHeight + 'px'
+    }
 
     const sendQuest = () => {
         let members = []
-        // get selected members from selection
+        
+        for(let i = 0; i < players.length; i++){
+            const check = document.getElementById(i+'-leader-check')
+            if(check.checked)members.push(check.name)
+        }
+
+        console.log(members)
+
         if(members.length != questSize){
-            alert('Wrong size, pick ' + questSize + ' questers.');
+            alert('Wrong size, pick ' + questSize + ' questers.')
             return
         }
-        socket.emit('leaders-quest', {...base, 'members': members})
-        document.getElementById('leader').setAttribute('style', 'display: none;');
+        socket.emit('leaders_quest', {...base, 'members': members})
+        document.getElementById('leader-div').setAttribute('style', 'display: none;')
     }
 
-    socket.on('prequest-vote', (playersOn) => {
-        document.getElementById('pre-quest-vote').setAttribute('style', '');
-        document.getElementById('leader').setAttribute('style', 'display: none;');
+    socket.on('prequest_vote', (playersOn) => {
+        document.getElementById('prequest-div').setAttribute('style', '')
         //load quest members view
         questHistory.find((record) => (record.results === undefined)).on = playersOn
+        updateQuestHistoryView()
+        const prequestVoteContainer = document.getElementById('prequest-inner-div')
+        prequestVoteContainer.style.maxHeight = prequestVoteContainer.scrollHeight + 'px'
     })
 
     const voteForQuest = (inFavor) => {
-        socket.emit('prequest-vote')
+        socket.emit('prequest_vote', {...base, 'vote':inFavor})
+        document.getElementById('prequest-div').setAttribute('style', 'display: none;')
     }
 
-    socket.on('pre-quest-result', (playersFor) => {
+    socket.on('prequest_result', (playersFor) => {
         questHistoryEntry = questHistory.find((record) => (record.results === undefined))
-        document.getElementById('pre-quest-result').setAttribute('style', '');
-        document.getElementById('pre-quest-vote').setAttribute('style', 'display: none;');
         questHistoryEntry.votes = playersFor
+        updateQuestHistoryView()
 
-        if(playerFor.length < (players.length/2)){
-            questHistoryEntry.result = false
-            return
-        }
-
-        if(questHistoryEntry.on.includes(name)){
-            //TODO: Load voting
-        }
-        //TODO: set the contents based on the votes people gave and save the results
+        if(playersFor.length <= (players.length/2))
+            questHistoryEntry.results = false
     })
 
-    socket.on('quest-vote', (voteOptions) => {
-        document.getElementById('quest-vote').setAttribute('style', '');
-        document.getElementById('pre-quest-result').setAttribute('style', 'display: none;');
-        //TODO: render the right options
+    socket.on('quest_vote', (voteOptions) => {
+        document.getElementById('quest-div').setAttribute('style', '')
+        resetVoteDiv(voteOptions)
     })
+
+    const resetVoteDiv = (options) => {
+        const questVoteContainer = document.getElementById('quest-inner-div')
+        questVoteContainer.innerHTML = options.reduce(
+            (out, option) => 
+                (out + `<button
+                    type="button" 
+                    id="${option}-button" 
+                    class="vote-${option}" 
+                    onclick="vote('${option}')"
+                >${optionMap[option]}</button>`),
+            ''
+        )
+
+        questVoteContainer.style.maxHeight = questVoteContainer.scrollHeight + 'px'
+    }
 
     const vote = (choice) => {
-        document.getElementById('pre-quest-vote').setAttribute('style', 'display: none;');
-        socket.emit('quest-vote', {...base, 'choice': choice})
+        document.getElementById('quest-div').setAttribute('style', 'display: none;')
+        socket.emit('quest_vote', {...base, 'choice': choice})
     }
 
-    socket.on('quest-result', (msg) => {
-        document.getElementById('quest-vote').setAttribute('style', 'display: none;');
+    socket.on('quest_result', (data) => {
+        questHistoryEntry = questHistory.find((record) => (record.results === undefined))
+        questHistoryEntry.results = data['results']
+        questHistoryEntry.passed = data['passed']
+        updateQuestHistoryView()
     })
 </script>
 
 <body>
 <div class="page-container">
-    <h1>Room {{ room_id }}</h1>
-    <div id="quest-history-div" style="display: none;">
-        <button type="button" class="collapsible">Quest History:</button>
-        <div id="quest-history-inner" class="content">
-            <table id="history-table">
-            </table>
+    <h1>Room {{ room_id }} - {{ name }}</h1>
+    <div id="leader-div" class="content" style="display: none;">
+        <button type="button" class="collapsible active">You're Leader. Pick a Quest:</button>
+        <div id="leader-inner-div" class="content"></div>
+    </div>
+    <div id="prequest-div" class="content" style="display: none;">
+        <button type="button" class="collapsible active">Vote:</button>
+        <div id="prequest-inner-div" class="content">
+            <button type="button" class="vote-yes" onclick="voteForQuest(true)">👍 For</button>
+            <button type="button" class="vote-no" onclick="voteForQuest(false)">👎 Against</button>
         </div>
+    </div>
+    <div id="quest-div" class="content" style="display: none;">
+        <button type="button" class="collapsible active">3, 2, 1, VOTE!</button>
+        <div id="quest-inner-div" class="content"></div>
     </div>
     <div id="your-role-div" style="display: none;">
         <button type="button" class="collapsible active">Your Role:</button>
@@ -135,14 +179,23 @@
             <p id="role-desc"></p>
         </div>
     </div>
-    <button type="button" class="collapsible">You're Leader. Pick a Quest:</button>
-    <div id="leader-div" class="content" style="max-height: 0px;">
-        <lu>
-            {% for player in players %}
-            <li>{{ player }}</li> <!-- TODO: make this checkboxes -->
-            {% endfor %}
-        </lu>
+    <div id="quest-history-div" style="display: none;">
+        <button type="button" class="collapsible active">Quest History:</button>
+        <div id="quest-history-inner" class="content">
+            <table id="history-table"></table>
+        </div>
     </div>
+    <div id="players-outer-div" class="content">
+        <button type="button" id='players-dropper' class="collapsible active">Players:</button>
+        <div id='player-list-div' class="content">
+            <lu id="player-list">
+                {% for player in players %}
+                <li>{{ player }}</li>
+                {% endfor %}
+            </lu>
+        </div>
+    </div>
+    <h3 id="waiting-label">Waiting for everyone to join...</h3>
     <button type="button" class="collapsible active">Cards:</button>
     <div id="roles-div" class="content">
         <lu>
@@ -151,20 +204,18 @@
             {% endfor %}
         </lu>
     </div>
-    <button type="button" id='players-dropper' class="collapsible active">Players:</button>
-    <div id='player-list-div' class="content">
-        <lu id="player-list">
-            {% for player in players %}
-            <li>{{ player }}</li>
-            {% endfor %}
-        </lu>
-    </div>
-    <h3 id="waiting-label">Waiting for everyone to join...</h3>
+    <br>
+    <button 
+        type="button" 
+        id="color-blind-btn" 
+        style="background-color: blue;"
+        onclick="toggleColorBlind()"
+    >Enable Color Blind Mode</button>
 </div>
 </body>
 
 <script>
-    const coll = document.getElementsByClassName("collapsible");
+    const coll = document.getElementsByClassName("collapsible")
     for (let i = 0; i < coll.length; i++) {
         content = coll[i].nextElementSibling
         content.style.maxHeight = content.scrollHeight + 'px'
@@ -175,24 +226,28 @@
     }
 
     const getResultsString = (results, passed) => {
-        if(!results)return '';
+        if(!results)return ''
         out = ''
         results.forEach((result) => {
             switch(result){
                 case "SUCCESS":
-                    out += "🟢"
-                    break;
+                    out += (colorBlind ? '✅' : '🟢')
+                    break
                 case "FAIL":
-                    out += "🔴"
-                    break;
+                    out += (colorBlind ? '❌' : '🔴')
+                    break
                 default:
                     out += "🔥"
             }
         })
-        return (passed ?  '✅' : '🟥') + ':' + out
+        return (passed ?  (colorBlind ? '✅' : '🟢') : (colorBlind ? '❌' : '🔴')) + ':' + out
     }
 
-    const updateQuestHistoryView = () => {
+    const getVotesForQuest = (record, player) => (record.votes.includes(player) ? 
+                                                    (colorBlind ? '✅' : '🟢') : 
+                                                    (colorBlind ? '❌' : '🔴'))
+
+    const updateQuestHistoryViewTranspose = () => {
         out = '<tr><th>Quest</th>'
         players.forEach((player)=>{out += '<th>' + player + '</th>'})
         out += '<th>Result</th></tr>'
@@ -201,15 +256,52 @@
             out += '<tr><td>' + (record.results === false ? `${count} (X)` : count++) +  '</td>'
             players.forEach((player)=>{
                 out += '<td>' 
-                    + ('votes' in record ? (record.votes.includes(player) ? '🟢' : '🔴') : '')
-                    + ('on' in record ? (record.on.includes(player) ? '✋' : '') : '')
+                    + ('votes' in record ? getVotesForQuest(record, player) : '')
+                    + (('on' in record && record.on.includes(player)) ? '✋' : '')
                     + (player == record.leader ? '👑' : '')
                     + '</td>'
             })
             out += '<td>' + getResultsString(record.results, record.passed) + '</td></tr>'
         })
-        console.log(out)
         document.getElementById('history-table').innerHTML = out
     }
+
+    const updateQuestHistoryView = () => {
+        //TODO: If you split off the first column and make it inline, data part may be made horizontally scrollable
+
+        let out = '<tr class="history-row-header"><th>Quest:</th>'
+        let count = 1
+        let row2 = '<tr class="history-row-result"><td>Result:</td>'
+        questHistory.forEach((record)=>{
+            out += '<th>' + (record.results === false ? `${count} (X)` : count++) +  '</th>'
+            row2 += '<td>' + getResultsString(record.results, record.passed) + '</td>'
+        })
+        out += '</tr>' + row2 + '</tr>'
+        
+        count = 1
+        players.forEach((player)=>{
+            out += '<tr class="history-row-' + count++%2 + '"><td>' + player + '</td>'
+            questHistory.forEach((record)=>{
+                out += '<td>' 
+                    + ('votes' in record ? getVotesForQuest(record, player) : '')
+                    + (('on' in record && record.on.includes(player)) ? '✋' : '')
+                    + (player == record.leader ? '👑' : '')
+                    + '</td>'
+        })
+            out += '</tr>'
+        })
+        document.getElementById('history-table').innerHTML = out
+        const historyContainer = document.getElementById('quest-history-inner')
+        historyContainer.style.maxHeight = document.getElementById('history-table').scrollHeight + 'px'
+    }
+
+    const toggleColorBlind = () => {
+        colorBlind = !colorBlind
+        updateQuestHistoryView()
+        button = document.getElementById('color-blind-btn')
+        button.innerHTML = colorBlind ? 'Disable Color Blind mode' : 'Enable Color Blind Mode'
+        button.style = colorBlind ? 'background-color: red;' : 'background-color: blue;'
+    }
+    toggleColorBlind()
 </script>
 </html>

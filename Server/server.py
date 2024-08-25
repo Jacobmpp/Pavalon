@@ -79,7 +79,7 @@ def on_join(data):
     join_room(room_id)
 
     if room_id not in rooms:
-        emit('That room does not exist yet.')
+        emit('error', 'That room does not exist yet.')
 
     room:Room = rooms[room_id]
 
@@ -118,42 +118,95 @@ def on_get_role(data):
     player:Player = room.players[name]
     emit('role', player.card.game_start(room), room=player.sid)
 
-@socketio.on('leaders-quest')
-def on_vote(data):
+@socketio.on('leaders_quest')
+def on_leaders_quest(data):
+    global rooms
+    name = data['name']
+    room_id = data['room_id']
+    room:Room = rooms[room_id]
+    player:Player = room.players[name]
+    if(room.get_leader() is not player or request.sid != player.sid):
+        emit('error', 'Nice try! XD')
+        return
+
+    room.game.quest_history[-1]['on'] = data['members']
+
+    emit('prequest_vote', data['members'], room=room_id)
+
+@socketio.on('prequest_vote')
+def on_prequest_vote(data):
+    global rooms
+    name = data['name']
+    room_id = data['room_id']
+    room:Room = rooms[room_id]
+    player:Player = room.players[name]
+
+    if request.sid != player.sid:
+        emit('error', 'Nice try! XD')
+        return
+    
+    if('votes' not in room.game.quest_history[-1]):
+        room.game.quest_history[-1]['votes'] = []
+
+    votes = room.game.quest_history[-1]['votes']
+
+    if(data['vote']):
+        votes.append(name)
+
+    room.game.vote_count += 1
+    if(room.game.vote_count == len(room.players)):
+        room.game.vote_count = 0
+        emit('prequest_result', votes, room=room_id)
+        if len(votes) > len(room.players)/2:
+            for member in room.game.quest_history[-1]['on']:
+                member:Player = room.players[member]
+                emit('quest_vote', member.card.get_options(room), room=member.sid)
+        else:
+            room.game.unsent_quests += 1
+            activate_leader(room_id)
+
+
+@socketio.on('quest_vote')
+def on_quest_vote(data):
     global rooms
     name = data['name']
     room_id = data['room_id']
     room:Room = rooms[room_id]
     player:Player = room.players[name]
     
-    if(room.get_leader() is not player):
-        emit('error', 'Nice try! XD', room=player.sid)
+    if request.sid != player.sid:
+        emit('error', 'Nice try! XD')
+        return
+    
+    if('results' not in room.game.quest_history[-1]):
+        room.game.quest_history[-1]['results'] = []
+    
+    choice = data['choice']
 
+    room.game.quest_history[-1]['results'].append(choice)
 
-    emit('prequest-vote', data['members'], room=room_id)
+    room.game.vote_count += 1
+    if(room.game.vote_count == room.game.get_quest().size):
+        room.game.vote_count = 0
 
-@socketio.on('prequest-vote')
-def on_vote(data):
-    global rooms
-    name = data['name']
-    room_id = data['room_id']
-    room:Room = rooms[room_id]
-    player:Player = room.players[name]
-    emit(player.card.game_start(room), room=player.sid)
+        results = room.game.quest_history[-1]['results']
+        passed = room.game.get_quest().evaluate(results)
+        room.game.quest_history[-1]['passed'] = passed
+        if(passed):
+            room.game.passes += 1
+        else:
+            room.game.fails += 1
 
-@socketio.on('quest-vote')
-def on_vote(data):
-    global rooms
-    name = data['name']
-    room_id = data['room_id']
-    room:Room = rooms[room_id]
-    player:Player = room.players[name]
-    emit(player.card.game_start(room), room=player.sid)
+        random.shuffle(results)
+        emit('quest_result', {'results':results, 'passed': passed}, room=room_id)
+        activate_leader(room_id)
+
 
 
 def activate_leader(room_id):
     global rooms
     room:Room = rooms[room_id]
+    room.game.quest_history.append({'leader':room.get_leader().name})
     emit('leader', {'count':room.game.get_quest().size, 'leader':room.get_leader().name}, room=room_id)
 
 

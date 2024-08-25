@@ -53,3 +53,21 @@ label {
 .active:after {
   content: "Hide"; /* Unicode character for "minus" sign (-) */
 }
+
+#color-blind-btn {
+  color: white;
+}
+
+.history-row-0 {
+  background-color: #eee;
+}
+.history-row-1 {
+  background-color: #bbb;
+}
+.history-row-header {
+  background-color: #555;
+  color: #fff;
+}
+.history-row-result {
+  background-color: #ddd;
+}
