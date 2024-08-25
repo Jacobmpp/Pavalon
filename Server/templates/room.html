@@ -157,6 +157,7 @@
 <body>
 <div class="page-container">
     <h1>Room {{ room_id }} - {{ name }}</h1>
+    <h3 id="waiting-label">Waiting for everyone to join...</h3>
     <div id="leader-div" style="display: none;">
         <div class="header">You're Leader. Pick a Quest:</div>
         <div id="leader-inner-div" class="content"></div>
@@ -199,7 +200,6 @@
             </lu>
         </div>
     </div>
-    <h3 id="waiting-label">Waiting for everyone to join...</h3>
     <button type="button" class="collapsible active">Cards:</button>
     <div id="roles-div" class="content">
         <lu>

@@ -135,6 +135,8 @@ class Room:
     def get_percival_sees(self):
         pair = [p.name for p in self.players.values() if p.card.name in ['Merlin', 'Morgana']]
         random.shuffle(pair)
+        if len(pair) > 2:
+            return '<b>' + '</b>, <b>'.join(pair[:-1]) + '</b>, and ' + pair[-1]
         return f"<b>{pair[0]}</b> and <b>{pair[1]}</b>"
     
     def get_leader(self) -> Player:
@@ -146,16 +148,16 @@ class Room:
 
 cards_prototypes = {
     'Merlin' : Card('Merlin', True, lambda room: (f"You are Merlin - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You see these players as evil: {', '.join(room.get_appears_evil())}")),
-    'Loyal Servant of Arthur' : Card('Loyal Servant of Arthur', True, 'You can only put in <b>SUCCESS</b> when placed on a quest.'),
     'Assassin' : Card('Assassin', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest and get final say on who you believe to be Merlin.'),
+    'Loyal Servant of Arthur' : Card('Loyal Servant of Arthur', True, 'You can only put in <b>SUCCESS</b> when placed on a quest.'),
     'Minion of Mordred' : Card('Minion of Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest.'),
-    'Oberon' : Card('Oberon', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest but you do not know anything else.', False, True, False),
+    'Percival' : Card('Percival', True, lambda room: (f"You are Percival - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You know that {room.get_percival_sees()} can only be Merlin or Morgana")),
     'Morgana' : Card('Morgana', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. Percival sees you and Merlin, but does not know who is whom.'),
     'Mordred' : Card('Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. You are not known to Merlin. If there is no assassin, you get final say on who you believe to be Merlin.', appears_evil=False),
-    'Percival' : Card('Percival', True, lambda room: (f"You are Percival - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You know that between {room.get_percival_sees()} one is Merlin and one is Morgana, but not which")),
-    'Lunatic' : Card('Lunatic', False, 'You must put a <b>FAILURE</b> when placed on a quest.', options=['FAIL']), 
+    'Oberon' : Card('Oberon', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest but you do not know anything else.', False, True, False),
     'Good Sorcerer' : Card('Good Sorcerer', True, 'You can put a <b>SUCCESS</b> or a <b>MAGIC</b> when placed on a quest. Each MAGIC will invert the result of the quest.', options=['SUCCESS', 'MAGIC']),
     'Evil Sorcerer' : Card('Evil Sorcerer', False, 'You can put a <b>SUCCESS</b> or a <b>MAGIC</b> when placed on a quest. Each MAGIC will invert the result of the quest.', options=['SUCCESS', 'MAGIC']),
-    'Good Lancelot' : Card('Good Lancelot', True, lambda room: (f"You are GOOD Lancelot\nYou can only put a <b>SUCCESS</b> when placed on a quest. You know that {[p.name for p in room.players if p.card.name == 'Evil Lancelot'][0]} is EVIL Lancelot")), 
-    'Evil Lancelot' : Card('Evil Lancelot', True, lambda room: (f"You are EVIL Lancelot\nYou can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. You know that {[p.name for p in room.players if p.card.name == 'Good Lancelot'][0]} is GOOD Lancelot")), 
+    'Good Lancelot' : Card('Good Lancelot', True, lambda room: (f"You are GOOD Lancelot\nYou can only put a <b>SUCCESS</b> when placed on a quest. You know that {' and '.join([p.name for p in room.players.values() if p.card.name == 'Evil Lancelot'])} {'is' if len([p.name for p in room.players.values() if p.card.name == 'Evil Lancelot']) == 1 else 'are'} EVIL Lancelot")), 
+    'Evil Lancelot' : Card('Evil Lancelot', False, lambda room: (f"You are EVIL Lancelot\nYou can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. You know that {' and '.join([p.name for p in room.players.values() if p.card.name == 'Good Lancelot'])} {'is' if len([p.name for p in room.players.values() if p.card.name == 'Good Lancelot']) == 1 else 'are'} GOOD Lancelot")), 
+    'Lunatic' : Card('Lunatic', False, 'You must put a <b>FAILURE</b> when placed on a quest.', options=['FAIL']), 
 }

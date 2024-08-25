@@ -6,19 +6,27 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+<script>
+    const change = (role, amount) => {
+        input = document.getElementById(role)
+        if(input.valueAsNumber + amount >= 0)
+            input.valueAsNumber += amount
+    }
+</script>
 <div class="page-container">
     <h1>Select roles</h1>
     <form action="/create_room" method="POST" style="text-align: left;">
         <input type="text" id="roles" name="roles" hidden>
-        <input type="text" id="new_room_id" name="new_room_id" hidden value="{{room_id}}">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required value="{{ name }}"><br><br>
         {% for role in roles %}
-        <input type="checkbox" id="{{ role }}" name="{{ role }}">
-        <label for="{{ role }}">{{ role[1:] }}</label>
+        <button type="button" id="{{ role }}-sub" onclick="change('{{ role }}', -1)">-</button>
+        <input type="number" style='width: 1.3rem;' id="{{ role }}" min="0" name="{{ role }}" value=0>
+        <button type="button" id="{{ role }}-add" onclick="change('{{ role }}', 1)">+</button>
+        <label for="{{ role }}">{{ role }}</label>
         <br>
         {% endfor %}
         <button type="submit">Join Room</button>
+        <input type="text" id="new_room_id" name="new_room_id" hidden value="{{room_id}}">
+        <input type="text" id="name" name="name" hidden value="{{ name }}"><br><br>
     </form>
 </div>
 </body>
