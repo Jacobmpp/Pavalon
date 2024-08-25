@@ -83,10 +83,13 @@ label {
   background-color: #555;
   color: #fff;
 }
-
-#titles-table {
-  text-align: right;
+.results-row-0 {
+  background-color: #eee;
 }
+.results-row-1 {
+  background-color: #bbb;
+}
+
 #history-table {
   display: block;
   overflow-x: auto;
@@ -96,6 +99,7 @@ label {
 .titles-cell {
   padding-right: 0.2rem;
   padding-left: 0.2rem;
+  text-align: right;
 }
 
 td,th {

@@ -257,9 +257,9 @@
         let table1 = '<tr class="history-row-header titles-cell"><th><div class="titles-cell">Quest:</div></th></tr>'
         let table2 = '<tr class="history-row-header">'
         let questIndex = 1
-        let table3 = (questHistory.find((record) => (typeof record.results === "object"))) ? '<tr class="history-row-header"><th>Quest</th><th>Result</th><tr>' : ''
+        let table3 = (questHistory.find((record) => (typeof record.results === "object"))) ? '<tr class="history-row-header"><th><div class="titles-cell">Quest</div></th><th>Result</th><tr>' : ''
         questHistory.forEach((record)=>{
-            table3 += (typeof record.results == 'object') ? `<tr><td>${questIndex}</td><td>${getResultsString(record.results, record.passed)}</td><tr>` : ''
+            table3 += (typeof record.results == 'object') ? `<tr class="results-row-${1 - questIndex%2}"><td><div class="titles-cell">${questIndex}</div></td><td>${getResultsString(record.results, record.passed)}</td><tr>` : ''
             table2 += '<th>' + (record.results === false ? `${questIndex} (X)` : questIndex++) +  '</th>'
         })
         table2 += '</tr>'
