@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
-    <title>WebSocket Room</title>
+    <meta charset='UTF-8'>
+    <title>Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+<div class="page-container">
     <h1>Join Room</h1>
-    <form action="/room" method="POST">
-        <label for="name">Name:</label>
-        <input type="text" id="name" required>
-        <label for="join_id">Room ID:</label>
-        <input type="text" id="join_id" required>
-        <button type="submit">Join</button>
+    <form action='/room' method='POST'>
+        <label for='name'>Name:</label><input type='text' name='name' id='name' required><br>
+        <label for='room_id'>Room ID:</label><input type='text' id='room_id' name='room_id' required value='{{ room_id }}'><br>
+        <button type='submit'>Join</button>
     </form>
     <h1>Create Room</h1>
-    <form action="/create_room" method="POST">
-        <label for="room_id">Room ID:</label>
-        <input type="text" id="room_id" name="room_id" required value="{{ room_id }}">
-        <button type="submit">Create</button>
+    <form action='/create_room' method='POST'>
+        <label for='new_room_id'>Room ID:</label><input type='text' id='new_room_id' name='new_room_id' required value='{{ room_id }}'><br>
+        <button type='submit'>Create</button>
     </form>
+</div>
 </body>
 </html>

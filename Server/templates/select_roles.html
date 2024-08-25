@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Room {{ room_id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+<div class="page-container">
     <h1>Select roles</h1>
-    <form action="/create_room" method="POST">
+    <form action="/create_room" method="POST" style="text-align: left;">
         <input type="text" id="roles" name="roles" hidden>
-        <input type="text" id="room_id" name="room_id" hidden value="{{room_id}}">
+        <input type="text" id="new_room_id" name="new_room_id" hidden value="{{room_id}}">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name" required><br><br>
         {% for role in roles %}
@@ -18,5 +20,6 @@
         {% endfor %}
         <button type="submit">Join Room</button>
     </form>
+</div>
 </body>
 </html>

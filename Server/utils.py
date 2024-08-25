@@ -19,6 +19,9 @@ class Card:
             return f'{self.name} - You are {alignment}\n{self.start}'
         return self.start(room)
     
+    def get_options(self, room) -> list[str]: # return the player's options based on their role and the room state if applicable
+        return self.options if isinstance(self.options, list) else self.options(room)
+    
     def __repr__(self):
         return "\n  " + self.name
 
@@ -56,25 +59,29 @@ class Game:
         self.leader_index = random.randint(0,good+evil-1)
         self.passes = 0
         self.fails = 0
+        self.unsent_quests = 0
+        self.quest_history = []
+        self.vote_count = 0
 
     def get_quest(self, index=None) -> Quest:
         if(index == None):
-            index = (self.good+self.evil)
+            index = self.passes + self.fails
         return Quest(self.quest_sizes[index], 2 if (index == 3 and self.good + self.evil >= 7) else 1)
     
     def get_round(self):
         return self.passes + self.fails + 1
+    
+    def get_leader_index(self):
+        return (self.passes + self.fails + self.leader_index + self.unsent_quests)
 
     def __repr__(self) -> str:
         return f"(\n  Good: {self.good}, Evil: {self.evil}, Round: {self.get_round()},\n  Quest Sizes: {self.quest_sizes}\n)"
 
-
-
-
 class Player:
-    def __init__(self, name):
+    def __init__(self, name, sid):
         self.name = name
         self.card = None
+        self.sid = sid
 
     def set_card(self, card:Card):
         self.card = card
@@ -88,11 +95,14 @@ class Room:
         self.players:dict[Player] = {}
         self.game = Game(len(cards))
 
-    def add_player(self, player:Player) -> bool:
-        if len(self.players) < len(self.cards) and player.name not in self.players:
-            self.players[player.name] = player
-            return True
-        return False
+    def add_player(self, player:Player) -> bool|str:
+        if len(self.players) >= len(self.cards):
+            return 'room-full'
+        if player.name in self.players:
+            return 'name-taken'
+
+        self.players[player.name] = player
+        return True
 
     def remove_player(self, name) -> bool:
         if(name in self.players):
@@ -113,32 +123,35 @@ class Room:
     def dist_cards(self):
         cards = copy.deepcopy(self.cards)
         random.shuffle(cards)
-        for i, player in enumerate(self.players.values):
+        for i, player in enumerate(self.players.values()):
             player.set_card(cards[i])
 
     def get_known_to_evil(self) -> list[str]:
-        return [p.name for p in self.players if p.card.known_to_evil]
+        return [p.name for p in self.players.values() if p.card.known_to_evil]
     
     def get_appears_evil(self) -> list[str]:
-        return [p.name for p in self.players if p.card.appears_evil]
+        return [p.name for p in self.players.values() if p.card.appears_evil]
     
     def get_percival_sees(self):
-        pair = [p.name for p in self.players if p.card.name in ['Merlin', 'Morgana']]
+        pair = [p.name for p in self.players.values() if p.card.name in ['Merlin', 'Morgana']]
         random.shuffle(pair)
-        return "<b>{pair[0]}</b> and <b>{pair[1]}</b>"
+        return f"<b>{pair[0]}</b> and <b>{pair[1]}</b>"
     
+    def get_leader(self) -> Player:
+        return self.players[list(self.players)[self.game.get_leader_index() % len(self.players)]]
+
     def __repr__(self):
         return f"[\nPlayers: {self.players},\nCards: {self.cards},\nGame: {self.game}\n]"
 
 
 cards_prototypes = {
-    'Merlin' : Card('Merlin', True, lambda room: (f"You are Merlin - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You see these players as evil: {str(room.get_appears_evil())}")),
+    'Merlin' : Card('Merlin', True, lambda room: (f"You are Merlin - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You see these players as evil: {', '.join(room.get_appears_evil())}")),
     'Loyal Servant of Arthur' : Card('Loyal Servant of Arthur', True, 'You can only put in <b>SUCCESS</b> when placed on a quest.'),
-    'Assasin' : Card('Assasin', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest and get final say on who you beleive to be Merlin.'),
+    'Assassin' : Card('Assassin', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest and get final say on who you believe to be Merlin.'),
     'Minion of Mordred' : Card('Minion of Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest.'),
     'Oberon' : Card('Oberon', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest but you do not know anything else.', False, True, False),
     'Morgana' : Card('Morgana', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. Percival sees you and Merlin, but does not know who is whom.'),
-    'Mordred' : Card('Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. You are not known to Merlin. If there is no assasin, you get final say on who you believe to be Merlin.', appears_evil=False),
+    'Mordred' : Card('Mordred', False, 'You can put a <b>SUCCESS</b> or <b>FAILURE</b> when placed on a quest. You are not known to Merlin. If there is no assassin, you get final say on who you believe to be Merlin.', appears_evil=False),
     'Percival' : Card('Percival', True, lambda room: (f"You are Percival - You are GOOD\nYou can only put a <b>SUCCESS</b> when placed on a quest. You know that between {room.get_percival_sees()} one is Merlin and one is Morgana, but not which")),
     'Lunatic' : Card('Lunatic', False, 'You must put a <b>FAILURE</b> when placed on a quest.', options=['FAIL']), 
     'Good Sorcerer' : Card('Good Sorcerer', True, 'You can put a <b>SUCCESS</b> or a <b>MAGIC</b> when placed on a quest. Each MAGIC will invert the result of the quest.', options=['SUCCESS', 'MAGIC']),
