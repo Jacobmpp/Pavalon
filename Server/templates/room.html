@@ -157,19 +157,19 @@
 <body>
 <div class="page-container">
     <h1>Room {{ room_id }} - {{ name }}</h1>
-    <div id="leader-div" class="content" style="display: none;">
-        <button type="button" class="collapsible active">You're Leader. Pick a Quest:</button>
+    <div id="leader-div" style="display: none;">
+        <div class="header">You're Leader. Pick a Quest:</div>
         <div id="leader-inner-div" class="content"></div>
     </div>
-    <div id="prequest-div" class="content" style="display: none;">
-        <button type="button" class="collapsible active">Vote:</button>
+    <div id="prequest-div" style="display: none;">
+        <div class="header">Vote:</div>
         <div id="prequest-inner-div" class="content">
             <button type="button" class="vote-yes" onclick="voteForQuest(true)">👍 For</button>
             <button type="button" class="vote-no" onclick="voteForQuest(false)">👎 Against</button>
         </div>
     </div>
-    <div id="quest-div" class="content" style="display: none;">
-        <button type="button" class="collapsible active">3, 2, 1, VOTE!</button>
+    <div id="quest-div" style="display: none;">
+        <div class="header">3, 2, 1, VOTE!</div>
         <div id="quest-inner-div" class="content"></div>
     </div>
     <div id="your-role-div" style="display: none;">
@@ -182,10 +182,14 @@
     <div id="quest-history-div" style="display: none;">
         <button type="button" class="collapsible active">Quest History:</button>
         <div id="quest-history-inner" class="content">
-            <table id="history-table"></table>
+            <div class="history-tables" style="display: flex;">
+                <table id="titles-table"></table>
+                <table id="history-table"></table>
+            </div>
+            <table id="results-table"></table>
         </div>
     </div>
-    <div id="players-outer-div" class="content">
+    <div id="players-outer-div">
         <button type="button" id='players-dropper' class="collapsible active">Players:</button>
         <div id='player-list-div' class="content">
             <lu id="player-list">
@@ -247,52 +251,37 @@
                                                     (colorBlind ? '✅' : '🟢') : 
                                                     (colorBlind ? '❌' : '🔴'))
 
-    const updateQuestHistoryViewTranspose = () => {
-        out = '<tr><th>Quest</th>'
-        players.forEach((player)=>{out += '<th>' + player + '</th>'})
-        out += '<th>Result</th></tr>'
-        count = 1
-        questHistory.forEach((record)=>{
-            out += '<tr><td>' + (record.results === false ? `${count} (X)` : count++) +  '</td>'
-            players.forEach((player)=>{
-                out += '<td>' 
-                    + ('votes' in record ? getVotesForQuest(record, player) : '')
-                    + (('on' in record && record.on.includes(player)) ? '✋' : '')
-                    + (player == record.leader ? '👑' : '')
-                    + '</td>'
-            })
-            out += '<td>' + getResultsString(record.results, record.passed) + '</td></tr>'
-        })
-        document.getElementById('history-table').innerHTML = out
-    }
-
     const updateQuestHistoryView = () => {
         //TODO: If you split off the first column and make it inline, data part may be made horizontally scrollable
 
-        let out = '<tr class="history-row-header"><th>Quest:</th>'
-        let count = 1
-        let row2 = '<tr class="history-row-result"><td>Result:</td>'
+        let table1 = '<tr class="history-row-header titles-cell"><th><div class="titles-cell">Quest:</div></th></tr>'
+        let table2 = '<tr class="history-row-header">'
+        let questIndex = 1
+        let table3 = (questHistory.find((record) => (typeof record.results === "object"))) ? '<tr class="history-row-header"><th>Quest</th><th>Result</th><tr>' : ''
         questHistory.forEach((record)=>{
-            out += '<th>' + (record.results === false ? `${count} (X)` : count++) +  '</th>'
-            row2 += '<td>' + getResultsString(record.results, record.passed) + '</td>'
+            table3 += (typeof record.results == 'object') ? `<tr><td>${questIndex}</td><td>${getResultsString(record.results, record.passed)}</td><tr>` : ''
+            table2 += '<th>' + (record.results === false ? `${questIndex} (X)` : questIndex++) +  '</th>'
         })
-        out += '</tr>' + row2 + '</tr>'
+        table2 += '</tr>'
         
-        count = 1
+        row = 0
         players.forEach((player)=>{
-            out += '<tr class="history-row-' + count++%2 + '"><td>' + player + '</td>'
+            table1 += '<tr class="history-row-' + row%2 + '"><td><div class="titles-cell">' + player + '</div></td></tr>'
+            table2 += '<tr class="history-row-' + row++%2 + '">'
             questHistory.forEach((record)=>{
-                out += '<td>' 
-                    + ('votes' in record ? getVotesForQuest(record, player) : '')
+                table2 += '<td class>' 
+                    + (player == record.leader ? '👑' : ' ')
                     + (('on' in record && record.on.includes(player)) ? '✋' : '')
-                    + (player == record.leader ? '👑' : '')
+                    + ('votes' in record ? getVotesForQuest(record, player) : '')
                     + '</td>'
         })
-            out += '</tr>'
+            table2 += '</tr>'
         })
-        document.getElementById('history-table').innerHTML = out
+        document.getElementById('titles-table').innerHTML = table1
+        document.getElementById('history-table').innerHTML = table2
+        document.getElementById('results-table').innerHTML = table3
         const historyContainer = document.getElementById('quest-history-inner')
-        historyContainer.style.maxHeight = document.getElementById('history-table').scrollHeight + 'px'
+        historyContainer.style.maxHeight = historyContainer.scrollHeight + 'px'
     }
 
     const toggleColorBlind = () => {

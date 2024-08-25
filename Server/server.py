@@ -66,6 +66,10 @@ def room(room_id=None, name=None):
         room_id = request.values['room_id']
     if name == None:
         name = request.values['name']
+
+    if room_id not in rooms:
+        return render_template('select_roles.html', room_id=room_id, name=name, roles=selectable_roles)
+    
     current_room:Room = rooms[room_id]
     return render_template('room.html', room_id=room_id, name=name, roles=[r.name for r in current_room.cards], players=list(current_room.players))
 
@@ -76,11 +80,9 @@ def on_join(data):
     room_id = data['room_id']
     if(name == 'kill'):
         del rooms[room_id]
+
+
     join_room(room_id)
-
-    if room_id not in rooms:
-        emit('error', 'That room does not exist yet.')
-
     room:Room = rooms[room_id]
 
     match room.add_player(Player(name, request.sid)):

@@ -12,7 +12,7 @@
         <input type="text" id="roles" name="roles" hidden>
         <input type="text" id="new_room_id" name="new_room_id" hidden value="{{room_id}}">
         <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required><br><br>
+        <input type="text" id="name" name="name" required value="{{ name }}"><br><br>
         {% for role in roles %}
         <input type="checkbox" id="{{ role }}" name="{{ role }}">
         <label for="{{ role }}">{{ role[1:] }}</label>
