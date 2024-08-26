@@ -162,5 +162,5 @@ cards_prototypes = {
     'The Lunatic' : Card('The Lunatic', False, 'You must vote <b>FAILURE</b> when placed on a quest.', options=['FAIL']), 
     'The Brute' : Card('The Brute', False, 'You can vote <b>SUCCESS</b> or <b>FAILURE</b> when placed on any of the first 3 quests then only <b>SUCCESS</b>.', options=(lambda room: ['FAIL', 'SUCCESS'] if room.game.get_round() < 4 else ['SUCCESS'])), 
     'The Cleric' : Card('The Cleric', True, lambda room: (f'You are The Cleric - You are GOOD\nYou must vote <b>SUCCESS</b> when placed on a quest. The first leader, {room.get_leader().name}, appears to be {'EVIL' if room.get_leader().card.appears_evil else 'GOOD'}')), 
-    'The Troublemaker' : Card('The Troublemaker', True, 'You must vote <b>SUCCESS</b> when placed on a quest. You appear EVIL to anyone who checks your loyalty.'), 
+    'The Troublemaker' : Card('The Troublemaker', True, 'You must vote <b>SUCCESS</b> when placed on a quest. You appear EVIL to anyone who checks your loyalty.', appears_evil=True), 
 }
