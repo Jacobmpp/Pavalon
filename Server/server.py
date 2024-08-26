@@ -1,4 +1,3 @@
-from email.policy import default
 from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from utils import *
@@ -146,7 +145,6 @@ def on_prequest_vote(data):
             room.game.unsent_quests += 1
             activate_leader(room_id)
 
-
 @socketio.on('quest_vote')
 def on_quest_vote(data):
     global rooms
@@ -181,7 +179,6 @@ def on_quest_vote(data):
         random.shuffle(results)
         emit('quest_result', {'results':results, 'passed': passed}, room=room_id)
         activate_leader(room_id)
-
 
 
 def activate_leader(room_id):

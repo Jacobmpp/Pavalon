@@ -1,7 +1,5 @@
 import random, copy
 
-from flask.cli import F
-
 class Card:
     def __init__(self, name, good, start, knows_evil=None, appears_evil=None, known_to_evil=None, options=None):
         self.name = name
@@ -12,7 +10,6 @@ class Card:
         self.start = start
         self.options = options if options != None else ['SUCCESS'] if good else ['SUCCESS', 'FAIL']
 
-    
     def game_start(self, room) -> str: # return a response to be given to the player based on their role and the room state
         if isinstance(self.start, str):
             alignment = 'GOOD' if self.good else 'EVIL'
