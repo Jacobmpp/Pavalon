@@ -158,6 +158,13 @@
 <div class="page-container">
     <h1>Room {{ room_id }} - {{ name }}</h1>
     <h3 id="waiting-label">Waiting for everyone to join...</h3>
+    <div id="your-role-div" style="display: none;">
+        <button type="button" class="collapsible active">Your Role:</button>
+        <div id="your-role-inner" class="content">
+            <h3 id="role-header"></h3>
+            <p id="role-desc"></p>
+        </div>
+    </div>
     <div id="leader-div" style="display: none;">
         <div class="header">You're Leader. Pick a Quest:</div>
         <div id="leader-inner-div" class="content"></div>
@@ -172,13 +179,6 @@
     <div id="quest-div" style="display: none;">
         <div class="header">3, 2, 1, VOTE!</div>
         <div id="quest-inner-div" class="content"></div>
-    </div>
-    <div id="your-role-div" style="display: none;">
-        <button type="button" class="collapsible active">Your Role:</button>
-        <div id="your-role-inner" class="content">
-            <h3 id="role-header"></h3>
-            <p id="role-desc"></p>
-        </div>
     </div>
     <div id="quest-history-div" style="display: none;">
         <button type="button" class="collapsible active">Quest History:</button>
