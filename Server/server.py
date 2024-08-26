@@ -1,29 +1,7 @@
-from email.policy import default
 from flask import Flask, render_template, request, redirect, url_for
 from flask_socketio import SocketIO, join_room, leave_room, emit
 from utils import *
 
-selectable_roles = [
-    ' Merlin', 
-    ' Assassin', 
-    '1Loyal Servant of Arthur', 
-    '2Loyal Servant of Arthur', 
-    '3Loyal Servant of Arthur', 
-    '4Loyal Servant of Arthur', 
-    '5Loyal Servant of Arthur', 
-    '1Minion of Mordred', 
-    '2Minion of Mordred', 
-    '3Minion of Mordred', 
-    ' Mordred',
-    ' Morgana', 
-    ' Percival', 
-    ' Oberon', 
-    ' Good Sorcerer', 
-    ' Bad Sorcerer', 
-    ' Good Lancelot', 
-    ' Bad Lancelot', 
-    ' Lunatic', 
-    ]
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -44,14 +22,14 @@ def create_room():
     if 'roles' in request.form:
         roles = []
         name = request.form['name']
-        for role in selectable_roles:
-            if(role in request.form and request.form[role]):
-                roles.append(role[1:])
+        for role in cards_prototypes:
+            if(role in request.form and int(request.form[role]) > 0):
+                roles += [role for a in range(int(request.form[role]))]
         rooms[room_id] = Room(cards=roles)
         return redirect(url_for('room', room_id=room_id, name=name))
 
     if room_id not in rooms:
-        return render_template('select_roles.html', room_id=room_id, roles=selectable_roles)
+        return render_template('select_roles.html', room_id=room_id, roles=list(cards_prototypes))
     return redirect(url_for('room', room_id=room_id, name=name))
 
 @app.route('/get_rooms', methods=['GET'])
@@ -66,6 +44,10 @@ def room(room_id=None, name=None):
         room_id = request.values['room_id']
     if name == None:
         name = request.values['name']
+
+    if room_id not in rooms:
+        return render_template('select_roles.html', room_id=room_id, name=name, roles=list(cards_prototypes))
+    
     current_room:Room = rooms[room_id]
     return render_template('room.html', room_id=room_id, name=name, roles=[r.name for r in current_room.cards], players=list(current_room.players))
 
@@ -76,11 +58,9 @@ def on_join(data):
     room_id = data['room_id']
     if(name == 'kill'):
         del rooms[room_id]
+
+
     join_room(room_id)
-
-    if room_id not in rooms:
-        emit('error', 'That room does not exist yet.')
-
     room:Room = rooms[room_id]
 
     match room.add_player(Player(name, request.sid)):
@@ -165,7 +145,6 @@ def on_prequest_vote(data):
             room.game.unsent_quests += 1
             activate_leader(room_id)
 
-
 @socketio.on('quest_vote')
 def on_quest_vote(data):
     global rooms
@@ -200,7 +179,6 @@ def on_quest_vote(data):
         random.shuffle(results)
         emit('quest_result', {'results':results, 'passed': passed}, room=room_id)
         activate_leader(room_id)
-
 
 
 def activate_leader(room_id):
